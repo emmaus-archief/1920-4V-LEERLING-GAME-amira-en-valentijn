@@ -22,14 +22,7 @@ const SPELEN = 1;
 const GAMEOVER = 2;
 var spelStatus = SPELEN;
 
-var spelerX = 200; // x-positie van speler
 var spelerY = 100; // y-positie van speler
-
-var kogelX = 0;    // x-positie van kogel
-var kogelY = 0;    // y-positie van kogel
-
-var vijandX = 0;   // x-positie van vijand
-var vijandY = 0;   // y-positie van vijand
 
 var score = 0; // aantal behaalde punten
 
@@ -52,50 +45,20 @@ var tekenVeld = function () {
 
 
 /**
- * Tekent de vijand
- * @param {number} x x-coördinaat
- * @param {number} y y-coördinaat
- */
-var tekenVijand = function(x, y) {
-    
-
-};
-
-
-/**
- * Tekent de kogel of de bal
- * @param {number} x x-coördinaat
- * @param {number} y y-coördinaat
- */
-var tekenKogel = function(x, y) {
-
-
-};
-
-
-/**
  * Tekent de speler
  * @param {number} x x-coördinaat
  * @param {number} y y-coördinaat
  */
-var tekenSpeler = function(x, y) {
+var tekenSpeler = function(y) {
   fill("white");
-  ellipse(x, y, 50, 50);
-};
-
-
-/**
- * Updatet globale variabelen met positie van vijand of tegenspeler
- */
-var beweegVijand = function() {
-    
+  ellipse(100, y, 50, 50);
 };
 
 
 /**
  * Updatet globale variabelen met positie van kogel of bal
  */
-var beweegKogel = function() {
+var beweegBuizen = function() {
 
 };
 
@@ -113,19 +76,8 @@ var beweegSpeler = function() {
  * Zoekt uit of de vijand is geraakt
  * @returns {boolean} true als vijand is geraakt
  */
-var checkVijandGeraakt = function() {
+var checkBuisDoorheen = function() {
 
-  return false;
-};
-
-
-/**
- * Zoekt uit of de speler is geraakt
- * bijvoorbeeld door botsing met vijand
- * @returns {boolean} true als speler is geraakt
- */
-var checkSpelerGeraakt = function() {
-    
   return false;
 };
 
@@ -135,7 +87,7 @@ var checkSpelerGeraakt = function() {
  * @returns {boolean} true als het spel is afgelopen
  */
 var checkGameOver = function() {
-    
+
   return false;
 };
 
@@ -162,24 +114,15 @@ function setup() {
 function draw() {
   switch (spelStatus) {
     case SPELEN:
-      beweegVijand();
-      beweegKogel();
+      beweegBuizen();
       beweegSpeler();
-      
-      if (checkVijandGeraakt()) {
-        // punten erbij
-        // nieuwe vijand maken
-      }
-      
-      if (checkSpelerGeraakt()) {
-        // leven eraf of gezondheid verlagen
-        // eventueel: nieuwe speler maken
+
+      if (checkBuisDoorheen()) {
+        // punt erbij
       }
 
       tekenVeld();
-      tekenVijand(vijandX, vijandY);
-      tekenKogel(kogelX, kogelY);
-      tekenSpeler(spelerX, spelerY);
+      tekenSpeler(spelerY);
 
       if (checkGameOver()) {
         spelStatus = GAMEOVER;
