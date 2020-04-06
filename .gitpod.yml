@@ -1,0 +1,8 @@
+ports:
+  - port: 8080
+    onOpen: open-browser
+tasks:
+  - command: python3 -m http.server 8080
+    name: webserver
+  - command: echo
+    name: terminal
