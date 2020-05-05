@@ -20,14 +20,11 @@
 const UITLEG = 0;
 const SPELEN = 1;
 const GAMEOVER = 2;
+
+const canvasHoogte = 1280;
+
 var spelStatus = SPELEN;
-
-var spelerY = 100; // y-positie van speler
-
 var score = 0; // aantal behaalde punten
-
-
-
 
 
 /* ********************************************* */
@@ -44,16 +41,22 @@ var tekenVeld = function () {
 };
 
 
-/**
- * Tekent de speler
- * @param {number} x x-coördinaat
- * @param {number} y y-coördinaat
- */
-var tekenSpeler = function(y) {
-  fill("white");
-  ellipse(100, y, 50, 50);
+class Speler {
+  constructor(xStart, yStart) {
+    this.x = xStart;
+    this.y = yStart;
+    this.snelheidY = 0;
+  }
+  update() {
+    this.snelheidY += 1;
+    this.y += this.snelheidY;
+    fill("white");
+    ellipse(this.x, this.y, 50, 50);
+  }
+  springen() {
+    this.snelheidY -= 50;
+  }
 };
-
 
 /**
  * Updatet globale variabelen met positie van kogel of bal
@@ -99,7 +102,7 @@ var checkGameOver = function() {
  */
 function setup() {
   // Maak een canvas (rechthoek) waarin je je speelveld kunt tekenen
-  createCanvas(720, 1280);
+  createCanvas(720, canvasHoogte);
 
   // Kleur de achtergrond blauw, zodat je het kunt zien
   background('blue');
@@ -111,22 +114,32 @@ function setup() {
  * de code in deze functie wordt meerdere keren per seconde
  * uitgevoerd door de p5 library, nadat de setup functie klaar is
  */
+
+// nieuwe speler aanmaken
+var speler = new Speler(200,150);
+
 function draw() {
   switch (spelStatus) {
     case SPELEN:
       beweegBuizen();
-      beweegSpeler();
 
       if (checkBuisDoorheen()) {
         // punt erbij
       }
 
       tekenVeld();
-      tekenSpeler(spelerY);
+      speler.update();
+      // tekenSpeler(spelerY);
 
       if (checkGameOver()) {
         spelStatus = GAMEOVER;
       }
       break;
+  }
+}
+
+function keyPressed() {
+  if(keyCode == UP_ARROW) {
+    speler.springen();
   }
 }
