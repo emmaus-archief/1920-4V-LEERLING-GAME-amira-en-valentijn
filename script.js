@@ -22,7 +22,10 @@ const SPELEN = 1;
 const GAMEOVER = 2;
 
 const canvasHoogte = 1280;
+const canvasBreedte = 720;
+const buisInterval = 2; // interval voordat er weer een nieuwe buis spawnt
 
+var snelheid = 2;
 var spelStatus = SPELEN;
 var score = 0; // aantal behaalde punten
 
@@ -37,7 +40,7 @@ var score = 0; // aantal behaalde punten
  */
 var tekenVeld = function () {
   fill("purple");
-  rect(20, 20, width - 2 * 20, height - 2 * 20);
+  rect(0, 0, width, height);
 };
 
 
@@ -47,33 +50,40 @@ class Speler {
     this.y = yStart;
     this.snelheidY = 0;
   }
+  teken() {
+    fill("white");
+    ellipse(this.x, this.y, 50, 50);
+  }
   update() {
     this.snelheidY += 1;
     this.y += this.snelheidY;
-    fill("white");
-    ellipse(this.x, this.y, 50, 50);
   }
   springen() {
     this.snelheidY -= 50;
   }
+  botsingMetGrond() {
+    return this.y > 1200;
+  }
 };
 
-/**
- * Updatet globale variabelen met positie van kogel of bal
- */
-var beweegBuizen = function() {
-
-};
-
-
-/**
- * Kijkt wat de toetsen/muis etc zijn.
- * Updatet globale variabele spelerX en spelerY
- */
-var beweegSpeler = function() {
-
-};
-
+class Buis {
+  constructor() {
+    this.x = canvasBreedte;
+    this.yOffset = random(-200, 200);
+    this.gap = 200;
+  }
+  teken() {
+    fill("white");
+    rect(this.x, canvasHoogte / 2 - this.yOffset + this.gap, 50, 1000);
+    rect(this.x, canvasHoogte / 2 - this.yOffset - this.gap, 50, -1000);
+  }
+  update() {
+    this.x -= snelheid;
+  }
+  uitHetVeld() {
+    return this.x < -50;
+  }
+}
 
 /**
  * Zoekt uit of de vijand is geraakt
@@ -102,10 +112,7 @@ var checkGameOver = function() {
  */
 function setup() {
   // Maak een canvas (rechthoek) waarin je je speelveld kunt tekenen
-  createCanvas(720, canvasHoogte);
-
-  // Kleur de achtergrond blauw, zodat je het kunt zien
-  background('blue');
+  createCanvas(canvasBreedte, canvasHoogte);
 }
 
 
@@ -116,27 +123,51 @@ function setup() {
  */
 
 // nieuwe speler aanmaken
-var speler = new Speler(200,150);
+var speler = new Speler(200,canvasHoogte / 2);
+var buizen = [];
 
 function draw() {
   switch (spelStatus) {
     case SPELEN:
-      beweegBuizen();
-
       if (checkBuisDoorheen()) {
         // punt erbij
       }
 
       tekenVeld();
-      speler.update();
-      // tekenSpeler(spelerY);
+
+      speler.teken();
+      if(speler.botsingMetGrond()) {
+        spelStatus = GAMEOVER;
+      } else {
+        speler.update();
+      }
+
+      buizen.forEach(function(buis, i) {
+        buis.teken();
+        if(buis.uitHetVeld()) {
+          buizen.splice(i, 1);
+        } else {
+          buis.update();
+        }
+      })
+
+      fill("white");
+      text(buizen.length, 100, 100);
 
       if (checkGameOver()) {
         spelStatus = GAMEOVER;
       }
       break;
+    case GAMEOVER:
+      tekenVeld();
+      text("GAME OVER", 100, 100);
+      break;
   }
 }
+
+setInterval(function() {
+  buizen.push(new Buis());
+}, buisInterval * 1000);
 
 function keyPressed() {
   if(keyCode == UP_ARROW) {
