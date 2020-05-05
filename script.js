@@ -59,7 +59,7 @@ class Speler {
     this.y += this.snelheidY;
   }
   springen() {
-    this.snelheidY -= 50;
+    this.snelheidY = -20;
   }
   botsingMetGrond() {
     return this.y > 1200;
@@ -79,6 +79,9 @@ class Buis {
   }
   update() {
     this.x -= snelheid;
+    if(this.x == 200) {
+      score++;
+    }
   }
   uitHetVeld() {
     return this.x < -50;
@@ -151,8 +154,9 @@ function draw() {
         }
       })
 
-      fill("white");
-      text(buizen.length, 100, 100);
+      fill("green");
+      textSize(32);
+      text(score, canvasBreedte / 2, 100);
 
       if (checkGameOver()) {
         spelStatus = GAMEOVER;
@@ -160,7 +164,11 @@ function draw() {
       break;
     case GAMEOVER:
       tekenVeld();
-      text("GAME OVER", 100, 100);
+      buizen.forEach(function(buis, i) {
+        buis.teken();
+      })
+      speler.teken();
+      text("GAME OVER", canvasBreedte / 2, 100);
       break;
   }
 }
@@ -170,7 +178,10 @@ setInterval(function() {
 }, buisInterval * 1000);
 
 function keyPressed() {
-  if(keyCode == UP_ARROW) {
+  if(keyCode == UP_ARROW || keyCode == 32) {
     speler.springen();
   }
+}
+function mousePressed() {
+  speler.springen();
 }
