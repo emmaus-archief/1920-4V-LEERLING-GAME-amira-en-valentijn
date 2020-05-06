@@ -25,9 +25,22 @@ const canvasHoogte = 1280;
 const canvasBreedte = 720;
 const buisInterval = 2; // interval voordat er weer een nieuwe buis spawnt
 
+// speler variables
+const spelerX = 200; // dit is een constant omdat de X van de speler nooit verandert
+var spelerY = canvasHoogte / 2; // de speler begint in het midden van het canvas
+var spelerSnelheidY = 0;
+var toetsAlIngedrukt = false;
+
+// buizen
+var buizen = [];
+["xPos", "yOffset", "scoreAdded"]
+var hoogteTussenBuizen = 200;
+
+// overig
 var snelheid = 2;
 var spelStatus = SPELEN;
 var score = 0; // aantal behaalde punten
+
 
 
 /* ********************************************* */
@@ -38,64 +51,37 @@ var score = 0; // aantal behaalde punten
 /**
  * Tekent het speelveld
  */
-var tekenVeld = function () {
+var tekenVeld = function() {
   fill("purple");
   rect(0, 0, width, height);
 };
 
+var tekenSpeler = function() {
+  fill("white");
+  ellipse(spelerX, spelerY, 50, 50);
+}
 
-class Speler {
-  constructor(xStart, yStart) {
-    this.x = xStart;
-    this.y = yStart;
-    this.snelheidY = 0;
-  }
-  teken() {
-    fill("white");
-    ellipse(this.x, this.y, 50, 50);
-  }
-  update() {
-    this.snelheidY += 1;
-    this.y += this.snelheidY;
-  }
-  springen() {
-    this.snelheidY = -20;
-  }
-  botsingMetGrond() {
-    return this.y > 1200;
-  }
-};
-
-class Buis {
-  constructor() {
-    this.x = canvasBreedte;
-    this.yOffset = random(-200, 200);
-    this.gap = 200;
-  }
-  teken() {
-    fill("white");
-    rect(this.x, canvasHoogte / 2 - this.yOffset + this.gap, 50, 1000);
-    rect(this.x, canvasHoogte / 2 - this.yOffset - this.gap, 50, -1000);
-  }
-  update() {
-    this.x -= snelheid;
-    if(this.x == 200) {
-      score++;
-    }
-  }
-  uitHetVeld() {
-    return this.x < -50;
+var updateSpeler = function() {
+  spelerSnelheidY += 1;
+  spelerY += spelerSnelheidY;
+  var toetsNuIngedrukt = keyIsPressed && (keyCode == UP_ARROW || keyCode == 32);
+  if(!toetsAlIngedrukt && toetsNuIngedrukt) {
+    toetsAlIngedrukt = true;
+    spelerSnelheidY = -20;
+  } else if(toetsAlIngedrukt && !toetsNuIngedrukt) {
+    toetsAlIngedrukt = false;
   }
 }
 
-/**
- * Zoekt uit of de vijand is geraakt
- * @returns {boolean} true als vijand is geraakt
- */
-var checkBuisDoorheen = function() {
+var tekenBuis = function(x, yOffset) {
+  fill("white");
+  rect(x, canvasHoogte / 2 - yOffset + hoogteTussenBuizen, 50, 1000);
+  rect(x, canvasHoogte / 2 - yOffset - hoogteTussenBuizen, 50, -1000);
+}
 
-  return false;
-};
+var updateBuis = function(i) {
+  buizen[i][0] -= snelheid;
+}
 
 
 /**
@@ -103,8 +89,11 @@ var checkBuisDoorheen = function() {
  * @returns {boolean} true als het spel is afgelopen
  */
 var checkGameOver = function() {
-
-  return false;
+  var gameOver = false;
+  if(spelerY > 1200) {
+    gameOver = true;
+  }
+  return gameOver;
 };
 
 
@@ -125,34 +114,29 @@ function setup() {
  * uitgevoerd door de p5 library, nadat de setup functie klaar is
  */
 
-// nieuwe speler aanmaken
-var speler = new Speler(200,canvasHoogte / 2);
-var buizen = [];
-
 function draw() {
   switch (spelStatus) {
     case SPELEN:
-      if (checkBuisDoorheen()) {
-        // punt erbij
-      }
-
       tekenVeld();
 
-      speler.teken();
-      if(speler.botsingMetGrond()) {
-        spelStatus = GAMEOVER;
-      } else {
-        speler.update();
-      }
+      tekenSpeler();
+      updateSpeler();
 
+      var teVerwijderen;
       buizen.forEach(function(buis, i) {
-        buis.teken();
-        if(buis.uitHetVeld()) {
-          buizen.splice(i, 1);
-        } else {
-          buis.update();
+        tekenBuis(buis[0], buis[1]);
+        updateBuis(i);
+        if(buis[0] < -50) {
+          teVerwijderen = i;
+        }
+        if(buis[2] == false && buis[0] < 200) {
+          score++;
+          buis[2] = true;
         }
       })
+      if(teVerwijderen) {
+        buizen.splice(teVerwijderen, 1);
+      }
 
       fill("green");
       textSize(32);
@@ -165,23 +149,19 @@ function draw() {
     case GAMEOVER:
       tekenVeld();
       buizen.forEach(function(buis, i) {
-        buis.teken();
+        tekenBuis(buis[0], buis[1]);
       })
-      speler.teken();
+      tekenSpeler();
       text("GAME OVER", canvasBreedte / 2, 100);
       break;
   }
 }
 
 setInterval(function() {
-  buizen.push(new Buis());
+  buizen.push([canvasBreedte, random(-200, 200), false]);
 }, buisInterval * 1000);
 
-function keyPressed() {
-  if(keyCode == UP_ARROW || keyCode == 32) {
-    speler.springen();
-  }
-}
+
 function mousePressed() {
-  speler.springen();
+  // speler.springen();
 }
