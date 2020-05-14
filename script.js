@@ -26,7 +26,7 @@ const canvasBreedte = 720;
 const buisInterval = 2; // interval voordat er weer een nieuwe buis spawnt
 
 // speler variables
-const spelerX = 200; // dit is een constant omdat de X van de speler nooit verandert
+const spelerX = 100; // dit is een constant omdat de X van de speler nooit verandert
 var spelerY = canvasHoogte / 2; // de speler begint in het midden van het canvas
 var spelerSnelheidY = 0;
 var toetsAlIngedrukt = false;
@@ -34,7 +34,7 @@ var toetsAlIngedrukt = false;
 // buizen
 var buizen = [];
 ["xPos", "yOffset", "scoreAdded"]
-var hoogteTussenBuizen = 200;
+var hoogteTussenBuizen = 150;
 
 // overig
 var snelheid = 2;
@@ -48,17 +48,46 @@ var score = 0; // aantal behaalde punten
 /* ********************************************* */
 
 
+function rotate_and_draw_image(img, img_x, img_y, img_width, img_height, img_angle){
+  push();
+  imageMode(CENTER);
+  translate(img_x+img_width/2, img_y+img_width/2);
+  rotate(img_angle);
+  image(img, 0, 0, img_width, img_height);
+  pop()
+}
+
+
 /**
  * Tekent het speelveld
  */
 var tekenVeld = function() {
-  fill("purple");
+  fill("lightblue");
   rect(0, 0, width, height);
 };
 
 var tekenSpeler = function() {
-  fill("white");
-  ellipse(spelerX, spelerY, 50, 50);
+  var sprite = birdUpflap;
+  if(currentFlap === 1) {
+    sprite = birdMidflap;
+  } else if(currentFlap === 2) {
+    sprite = birdDownflap;
+  }
+  var angle = 0;
+  if(spelerSnelheidY > 0) {
+    angle = 15;
+  } else {
+    angle = -20;
+  }
+  rotate_and_draw_image(sprite, spelerX, spelerY, 70, 50, angle);
+}
+
+var spelerValt = function() {
+  if(spelerY < 1200) {
+    spelerSnelheidY += 0.5;
+    spelerY += spelerSnelheidY;
+  }
+  rotate_and_draw_image(birdMidflap, spelerX, spelerY, 70, 50, 80);
 }
 
 var updateSpeler = function() {
@@ -74,9 +103,12 @@ var updateSpeler = function() {
 }
 
 var tekenBuis = function(x, yOffset) {
-  fill("white");
-  rect(x, canvasHoogte / 2 - yOffset + hoogteTussenBuizen, 50, 1000);
-  rect(x, canvasHoogte / 2 - yOffset - hoogteTussenBuizen, 50, -1000);
+  // pijp boven
+  var y = canvasHoogte / 2 - yOffset - hoogteTussenBuizen - 640;
+  image(pipeOnderstebovenSprite, x, y, 104, 640);
+  // pijp onder
+  var y2 = canvasHoogte / 2 - yOffset + hoogteTussenBuizen;
+  image(pipeSprite, x, y2, 104, 640);
 }
 
 var updateBuis = function(i) {
@@ -93,16 +125,51 @@ var checkGameOver = function() {
   if(spelerY > 1200) {
     gameOver = true;
   }
+  buizen.forEach(function(buis) {
+    var raaktBuisX = buis[0] > spelerX - 100 && buis[0] < spelerX + 55;
+    var raaktBuisBoven = spelerY < canvasHoogte / 2 - buis[1] - hoogteTussenBuizen - 10; // lager = sneller botsing boven buis
+    var raaktBuisOnder = spelerY > canvasHoogte / 2 - buis[1] + hoogteTussenBuizen - 55; // hoger = sneller botsing onder buis
+
+    if(raaktBuisX && (raaktBuisBoven || raaktBuisOnder)) {
+      gameOver = true;
+    }
+  })
   return gameOver;
 };
 
+
+// load images
 
 /**
  * setup
  * de code in deze functie wordt één keer uitgevoerd door
  * de p5 library, zodra het spel geladen is in de browser
  */
+let birdUpflap;
+let birdMidflap;
+let birdDownflap;
+let pipeSprite;
+let pipeOnderstebovenSprite;
+var currentFlap = 0;
 function setup() {
+  // angle mode zetten (om in graden te kunnen rekenen)
+  angleMode(DEGREES);
+  // Plaatjes laden
+  birdUpflap = loadImage('images/bird-upflap.png');
+  birdMidflap = loadImage('images/bird-midflap.png');
+  birdDownflap = loadImage('images/bird-downflap.png');
+  setInterval(function() {
+    if(spelStatus === SPELEN) {
+      if(currentFlap < 2) {
+        currentFlap++;
+      } else {
+        currentFlap = 0;
+      }
+    }
+  }, 250)
+
+  pipeSprite = loadImage('images/pipe.png');
+  pipeOnderstebovenSprite = loadImage('images/pipe-ondersteboven.jpg');
   // Maak een canvas (rechthoek) waarin je je speelveld kunt tekenen
   createCanvas(canvasBreedte, canvasHoogte);
 }
@@ -126,7 +193,7 @@ function draw() {
       buizen.forEach(function(buis, i) {
         tekenBuis(buis[0], buis[1]);
         updateBuis(i);
-        if(buis[0] < -50) {
+        if(buis[0] < -100) {
           teVerwijderen = i;
         }
         if(buis[2] == false && buis[0] < 200) {
@@ -144,6 +211,7 @@ function draw() {
 
       if (checkGameOver()) {
         spelStatus = GAMEOVER;
+        spelerSnelheidY = 1;
       }
       break;
     case GAMEOVER:
@@ -151,17 +219,12 @@ function draw() {
       buizen.forEach(function(buis, i) {
         tekenBuis(buis[0], buis[1]);
       })
-      tekenSpeler();
+      spelerValt();
       text("GAME OVER", canvasBreedte / 2, 100);
       break;
   }
 }
 
 setInterval(function() {
-  buizen.push([canvasBreedte, random(-200, 200), false]);
+  buizen.push([canvasBreedte, random(-180, 180), false]);
 }, buisInterval * 1000);
-
-
-function mousePressed() {
-  // speler.springen();
-}
