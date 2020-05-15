@@ -17,13 +17,14 @@
 /* globale variabelen die je gebruikt in je game */
 /* ********************************************* */
 
-const UITLEG = 0;
+const STARTMENU = 0;
 const SPELEN = 1;
 const GAMEOVER = 2;
 
-const canvasHoogte = 1280;
+const canvasHoogte = 900;
 const canvasBreedte = 720;
 const buisInterval = 2; // interval voordat er weer een nieuwe buis spawnt
+const grondHoogte = 270;
 
 // speler variables
 const spelerX = 100; // dit is een constant omdat de X van de speler nooit verandert
@@ -62,8 +63,11 @@ function rotate_and_draw_image(img, img_x, img_y, img_width, img_height, img_ang
  * Tekent het speelveld
  */
 var tekenVeld = function() {
-  fill("lightblue");
-  rect(0, 0, width, height);
+  var groundHeight = groundSprite.height / groundSprite.width * canvasBreedte;
+  var backgroundHeight = canvasHoogte - groundHeight;
+  var backgroundWidth = background.width / backgroundHeight * canvasBreedte;
+  image(background, 0, 0, backgroundWidth, backgroundHeight);
+  image(groundSprite, 0, canvasHoogte - groundHeight, canvasBreedte, groundHeight);
 };
 
 var tekenSpeler = function() {
@@ -73,21 +77,15 @@ var tekenSpeler = function() {
   } else if(currentFlap === 2) {
     sprite = birdDownflap;
   }
-  var angle = 0;
-  if(spelerSnelheidY > 0) {
-    angle = 15;
-  } else {
-    angle = -20;
-  }
-  rotate_and_draw_image(sprite, spelerX, spelerY, 70, 50, angle);
+  rotate_and_draw_image(sprite, spelerX, spelerY, 83, 50, spelerSnelheidY);
 }
 
 var spelerValt = function() {
-  if(spelerY < 1200) {
+  if(spelerY < canvasHoogte - grondHoogte) {
     spelerSnelheidY += 0.5;
     spelerY += spelerSnelheidY;
   }
-  rotate_and_draw_image(birdMidflap, spelerX, spelerY, 70, 50, 80);
+  rotate_and_draw_image(birdMidflap, spelerX, spelerY, 83, 50, 80);
 }
 
 var updateSpeler = function() {
@@ -122,7 +120,7 @@ var updateBuis = function(i) {
  */
 var checkGameOver = function() {
   var gameOver = false;
-  if(spelerY > 1200) {
+  if(spelerY > canvasHoogte - grondHoogte) {
     gameOver = true;
   }
   buizen.forEach(function(buis) {
@@ -150,6 +148,8 @@ let birdMidflap;
 let birdDownflap;
 let pipeSprite;
 let pipeOnderstebovenSprite;
+let groundSprite;
+let background;
 var currentFlap = 0;
 function setup() {
   // angle mode zetten (om in graden te kunnen rekenen)
@@ -159,17 +159,19 @@ function setup() {
   birdMidflap = loadImage('images/bird-midflap.png');
   birdDownflap = loadImage('images/bird-downflap.png');
   setInterval(function() {
-    if(spelStatus === SPELEN) {
+    if(spelStatus === SPELEN || spelStatus === STARTMENU) {
       if(currentFlap < 2) {
         currentFlap++;
       } else {
         currentFlap = 0;
       }
     }
-  }, 250)
+  }, 150)
 
   pipeSprite = loadImage('images/pipe.png');
   pipeOnderstebovenSprite = loadImage('images/pipe-ondersteboven.jpg');
+  groundSprite = loadImage('images/ground.png');
+  background = loadImage('images/background.png');
   // Maak een canvas (rechthoek) waarin je je speelveld kunt tekenen
   createCanvas(canvasBreedte, canvasHoogte);
 }
@@ -183,6 +185,10 @@ function setup() {
 
 function draw() {
   switch (spelStatus) {
+    case STARTMENU:
+      tekenVeld();
+      tekenSpeler();
+      break;
     case SPELEN:
       tekenVeld();
 
