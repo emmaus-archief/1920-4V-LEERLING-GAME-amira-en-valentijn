@@ -42,6 +42,9 @@ var hoogteTussenBuizen = 150;
 var snelheid = 2;
 var spelStatus = STARTMENU;
 var score = 0; // aantal behaalde punten
+var highScore = 0;
+var newHighScore = false;
+var frame = 0;
 
 
 
@@ -84,6 +87,12 @@ var tekenGrond = function() {
   image(groundSprite, -statePx + canvasBreedte, canvasHoogte - groundHeight, canvasBreedte, groundHeight);
 }
 
+var tekenScore = function() {
+  fill("green");
+  textSize(50);
+  text(score, canvasBreedte / 2, 100);
+}
+
 var tekenSpeler = function() {
   var sprite = birdUpflap;
   if(currentFlap === 1) {
@@ -92,6 +101,9 @@ var tekenSpeler = function() {
     sprite = birdDownflap;
   }
   rotate_and_draw_image(sprite, spelerX, spelerY, 83, 50, spelerSnelheidY);
+  if(spelStatus === STARTMENU) {
+    spelerY = sin(frame * 4) * 10 + spelerYStart;
+  }
 }
 
 var spelerValt = function() {
@@ -142,6 +154,15 @@ var checkGameOver = function() {
   return gameOver;
 };
 
+var tekenGameoverMenu = function() {
+  if(newHighScore) {
+    fill("red");
+    textSize(40);
+    text("NEW HS: " + highScore, 40, 40);
+  }
+  text("GAME OVER", canvasBreedte / 2, 100);
+}
+
 
 // load images
 
@@ -157,14 +178,22 @@ let pipeSprite;
 let pipeOnderstebovenSprite;
 let groundSprite;
 let background;
+function preload() {
+  birdUpflap = loadImage('images/bird-upflap.png');
+  birdMidflap = loadImage('images/bird-midflap.png');
+  birdDownflap = loadImage('images/bird-downflap.png');
+  pipeSprite = loadImage('images/pipe.png');
+  pipeOnderstebovenSprite = loadImage('images/pipe-ondersteboven.jpg');
+  groundSprite = loadImage('images/ground.png');
+  background = loadImage('images/background.png');
+}
+
 var currentFlap = 0;
 function setup() {
   // angle mode zetten (om in graden te kunnen rekenen)
   angleMode(DEGREES);
   // Plaatjes laden
-  birdUpflap = loadImage('images/bird-upflap.png');
-  birdMidflap = loadImage('images/bird-midflap.png');
-  birdDownflap = loadImage('images/bird-downflap.png');
+
   setInterval(function() {
     if(spelStatus === SPELEN || spelStatus === STARTMENU) {
       if(currentFlap < 2) {
@@ -175,10 +204,7 @@ function setup() {
     }
   }, 150)
 
-  pipeSprite = loadImage('images/pipe.png');
-  pipeOnderstebovenSprite = loadImage('images/pipe-ondersteboven.jpg');
-  groundSprite = loadImage('images/ground.png');
-  background = loadImage('images/background.png');
+
   // Maak een canvas (rechthoek) waarin je je speelveld kunt tekenen
   createCanvas(canvasBreedte, canvasHoogte);
 }
@@ -191,14 +217,13 @@ function setup() {
  */
 
 function draw() {
+  frame++;
+
   switch (spelStatus) {
     case STARTMENU:
       tekenVeld();
       tekenGrond();
       tekenSpeler();
-      // if(keyIsDown(UP_ARROW) || keyIsDown(32) || mouseIsPressed) {
-      //   spelStatus = SPELEN;
-      // }
       break;
     case SPELEN:
       tekenVeld();
@@ -222,13 +247,15 @@ function draw() {
       }
 
       tekenGrond();
-
-
-      fill("green");
-      textSize(32);
-      text(score, canvasBreedte / 2, 100);
+      tekenScore();
 
       if (checkGameOver()) {
+        if(score > highScore) {
+          highScore = score;
+          newHighScore = true;
+        } else {
+          newHighScore = false;
+        }
         spelStatus = GAMEOVER;
         spelerSnelheidY = 1;
       }
@@ -240,7 +267,9 @@ function draw() {
       })
       tekenGrond();
       spelerValt();
-      text("GAME OVER", canvasBreedte / 2, 100);
+      if(spelerY > grondHoogte) {
+        tekenGameoverMenu();
+      }
       break;
   }
 }
@@ -249,7 +278,15 @@ setInterval(function() {
   if(spelStatus === SPELEN) {
     buizen.push([canvasBreedte, random(-50, 300), false]);
   }
-}, buisInterval * 1000);
+}, buisInterval * 2000 / snelheid);
+
+var resetSpel = function() {
+  spelStatus = STARTMENU;
+  spelerY = spelerYStart;
+  spelerSnelheidY = 0;
+  buizen = [];
+  score = 0;
+}
 
 var input = function() {
   if(spelStatus === SPELEN) {
@@ -258,8 +295,7 @@ var input = function() {
     spelerSnelheidY = -20;
     spelStatus = SPELEN;
   } else if(spelStatus === GAMEOVER) {
-    spelStatus = STARTMENU;
-    spelerY = spelerYStart;
+    resetSpel();
   }
 }
 
