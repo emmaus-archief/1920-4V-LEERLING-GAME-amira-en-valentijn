@@ -28,7 +28,7 @@ const grondHoogte = 270;
 
 // speler variables
 const spelerX = 100; // dit is een constant omdat de X van de speler nooit verandert
-var spelerY = canvasHoogte / 2; // de speler begint in het midden van het canvas
+var spelerY = 370;
 var spelerSnelheidY = 0;
 var toetsAlIngedrukt = false;
 
@@ -39,7 +39,7 @@ var hoogteTussenBuizen = 150;
 
 // overig
 var snelheid = 2;
-var spelStatus = SPELEN;
+var spelStatus = STARTMENU;
 var score = 0; // aantal behaalde punten
 
 
@@ -104,7 +104,7 @@ var spelerValt = function() {
 var updateSpeler = function() {
   spelerSnelheidY += 1;
   spelerY += spelerSnelheidY;
-  var toetsNuIngedrukt = keyIsPressed && (keyCode == UP_ARROW || keyCode == 32);
+  var toetsNuIngedrukt = keyIsDown(UP_ARROW) || keyIsDown(32);
   if(!toetsAlIngedrukt && toetsNuIngedrukt) {
     toetsAlIngedrukt = true;
     spelerSnelheidY = -20;
@@ -200,7 +200,11 @@ function draw() {
   switch (spelStatus) {
     case STARTMENU:
       tekenVeld();
+      tekenGrond();
       tekenSpeler();
+      if(keyIsDown(UP_ARROW) || keyIsDown(32)) {
+        spelStatus = SPELEN;
+      }
       break;
     case SPELEN:
       tekenVeld();
@@ -248,5 +252,7 @@ function draw() {
 }
 
 setInterval(function() {
-  buizen.push([canvasBreedte, random(-50, 300), false]);
+  if(spelStatus === SPELEN) {
+    buizen.push([canvasBreedte, random(-50, 300), false]);
+  }
 }, buisInterval * 1000);
