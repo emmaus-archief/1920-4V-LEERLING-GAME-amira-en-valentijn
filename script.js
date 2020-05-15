@@ -28,7 +28,8 @@ const grondHoogte = 270;
 
 // speler variables
 const spelerX = 100; // dit is een constant omdat de X van de speler nooit verandert
-var spelerY = 370;
+var spelerYStart = 350;
+var spelerY = spelerYStart;
 var spelerSnelheidY = 0;
 var toetsAlIngedrukt = false;
 
@@ -104,13 +105,6 @@ var spelerValt = function() {
 var updateSpeler = function() {
   spelerSnelheidY += 1;
   spelerY += spelerSnelheidY;
-  var toetsNuIngedrukt = keyIsDown(UP_ARROW) || keyIsDown(32);
-  if(!toetsAlIngedrukt && toetsNuIngedrukt) {
-    toetsAlIngedrukt = true;
-    spelerSnelheidY = -20;
-  } else if(toetsAlIngedrukt && !toetsNuIngedrukt) {
-    toetsAlIngedrukt = false;
-  }
 }
 
 var tekenBuis = function(x, yOffset) {
@@ -202,9 +196,9 @@ function draw() {
       tekenVeld();
       tekenGrond();
       tekenSpeler();
-      if(keyIsDown(UP_ARROW) || keyIsDown(32)) {
-        spelStatus = SPELEN;
-      }
+      // if(keyIsDown(UP_ARROW) || keyIsDown(32) || mouseIsPressed) {
+      //   spelStatus = SPELEN;
+      // }
       break;
     case SPELEN:
       tekenVeld();
@@ -256,3 +250,24 @@ setInterval(function() {
     buizen.push([canvasBreedte, random(-50, 300), false]);
   }
 }, buisInterval * 1000);
+
+var input = function() {
+  if(spelStatus === SPELEN) {
+    spelerSnelheidY = -20;
+  } else if(spelStatus === STARTMENU) {
+    spelerSnelheidY = -20;
+    spelStatus = SPELEN;
+  } else if(spelStatus === GAMEOVER) {
+    spelStatus = STARTMENU;
+    spelerY = spelerYStart;
+  }
+}
+
+function keyPressed() {
+  if(keyCode === UP_ARROW || keyCode === 32) {
+    input();
+  }
+}
+function mousePressed() {
+  input();
+}
