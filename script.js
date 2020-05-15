@@ -62,13 +62,26 @@ function rotate_and_draw_image(img, img_x, img_y, img_width, img_height, img_ang
 /**
  * Tekent het speelveld
  */
+
 var tekenVeld = function() {
   var groundHeight = groundSprite.height / groundSprite.width * canvasBreedte;
   var backgroundHeight = canvasHoogte - groundHeight;
   var backgroundWidth = background.width / backgroundHeight * canvasBreedte;
   image(background, 0, 0, backgroundWidth, backgroundHeight);
-  image(groundSprite, 0, canvasHoogte - groundHeight, canvasBreedte, groundHeight);
 };
+
+var statePx = 0;
+var tekenGrond = function() {
+  var groundHeight = groundSprite.height / groundSprite.width * canvasBreedte;
+  if(spelStatus === SPELEN || spelStatus === STARTMENU) {
+    statePx += snelheid;
+  }
+  if(statePx > canvasBreedte) {
+    statePx = 0;
+  }
+  image(groundSprite, -statePx, canvasHoogte - groundHeight, canvasBreedte, groundHeight);
+  image(groundSprite, -statePx + canvasBreedte, canvasHoogte - groundHeight, canvasBreedte, groundHeight);
+}
 
 var tekenSpeler = function() {
   var sprite = birdUpflap;
@@ -85,7 +98,7 @@ var spelerValt = function() {
     spelerSnelheidY += 0.5;
     spelerY += spelerSnelheidY;
   }
-  rotate_and_draw_image(birdMidflap, spelerX, spelerY, 83, 50, 80);
+  rotate_and_draw_image(birdMidflap, spelerX, spelerY, 70, 60, 80);
 }
 
 var updateSpeler = function() {
@@ -191,7 +204,6 @@ function draw() {
       break;
     case SPELEN:
       tekenVeld();
-
       tekenSpeler();
       updateSpeler();
 
@@ -211,6 +223,9 @@ function draw() {
         buizen.splice(teVerwijderen, 1);
       }
 
+      tekenGrond();
+
+
       fill("green");
       textSize(32);
       text(score, canvasBreedte / 2, 100);
@@ -225,6 +240,7 @@ function draw() {
       buizen.forEach(function(buis, i) {
         tekenBuis(buis[0], buis[1]);
       })
+      tekenGrond();
       spelerValt();
       text("GAME OVER", canvasBreedte / 2, 100);
       break;
@@ -232,5 +248,5 @@ function draw() {
 }
 
 setInterval(function() {
-  buizen.push([canvasBreedte, random(-180, 180), false]);
+  buizen.push([canvasBreedte, random(-50, 300), false]);
 }, buisInterval * 1000);
