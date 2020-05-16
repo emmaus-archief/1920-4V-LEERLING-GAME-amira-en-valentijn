@@ -262,12 +262,14 @@ function draw() {
       tekenSpeler();
       updateSpeler();
 
-      var teVerwijderen;
+      var teVerwijderen = [];
       buizen.forEach(function(buis, i) {
         tekenBuis(buis[0], buis[1]);
         updateBuis(buis);
-        if(buis[0] < -100) {
-          teVerwijderen = i;
+        if(richting === 2 && buis[0] < -buisBreedte) {
+          teVerwijderen.push(buis);
+        } else if(richting === -2 && buis[0] > canvasBreedte) {
+          teVerwijderen.push(buis);
         }
         if(buis[2] == false && richting === 2 && buis[0] < 100) {
           score++;
@@ -277,9 +279,6 @@ function draw() {
           buis[2] = true;
         }
       })
-      if(teVerwijderen) {
-        buizen.splice(teVerwijderen, 1);
-      }
 
       if(richting === -1) {
         if(spelerX >= 450) {
@@ -289,12 +288,6 @@ function draw() {
               teVerwijderen.push(buis);
             } else {
               buis[2] = false;
-            }
-          })
-          teVerwijderen.forEach(function(buis) {
-            var index = array.indexOf(buis);
-            if (index > -1) {
-              array.splice(index, 1);
             }
           })
           richting = -2;
@@ -311,17 +304,18 @@ function draw() {
               buis[2] = false;
             }
           })
-          teVerwijderen.forEach(function(buis) {
-            var index = array.indexOf(buis);
-            if (index > -1) {
-              array.splice(index, 1);
-            }
-          })
           richting = 2;
         } else {
           spelerX -= snelheid;
         }
       }
+
+      teVerwijderen.forEach(function(buis) {
+        var index = buizen.indexOf(buis);
+        if (index > -1) {
+          buizen.splice(index, 1);
+        }
+      })
 
       tekenGrond();
       tekenScore();
