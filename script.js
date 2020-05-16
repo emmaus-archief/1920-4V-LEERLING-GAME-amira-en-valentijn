@@ -51,7 +51,7 @@ var flashOpacity = 255;
 var snelheid = 4;
 var spelStatus = MENU;
 var frame = 0;
-var playButtonY = canvasHoogte + 87;
+var playButtonY = 500;
 var gameoverFrame;
 
 // richting uitleg:
@@ -77,7 +77,7 @@ function rotate_and_draw_image(img, img_x, img_y, img_width, img_height, img_ang
 }
 
 function resetSpel() {
-  spelStatus = MENU;
+  spelStatus = WAITING;
   spelerY = spelerYStart;
   spelerSnelheidY = 0;
   buizen = [];
@@ -105,7 +105,7 @@ var tekenVeld = function() {
 var tekenMenu = function() {
   push();
   imageMode(CENTER);
-  image(playButton, canvasBreedte / 2, 500, 156, 87);
+  image(playButton, canvasBreedte / 2, playButtonY, 156, 87);
   image(flappyBirdText, canvasBreedte / 2, 200, 356, 96);
   pop();
 }
@@ -162,7 +162,7 @@ var tekenSpeler = function() {
 
 var spelerValt = function() {
   if(spelerY < canvasHoogte - grondHoogte) {
-    spelerSnelheidY += 0.5;
+    spelerSnelheidY += 0.4;
     spelerY += spelerSnelheidY;
   }
   rotate_and_draw_image(birdMidflap, spelerX - 40, spelerY - 40, birdMidflap.width * 2, birdMidflap.height * 2, 70);
@@ -218,7 +218,7 @@ var checkGameOver = function() {
 
 
 var tekenGameoverMenu = function() {
-  if(frame - gameoverFrame > 120) {
+  if(frame - gameoverFrame > 40) {
     push();
     imageMode(CENTER);
     var dy = scoreboardY - 440;
@@ -228,20 +228,17 @@ var tekenGameoverMenu = function() {
     }
     image(scoreboard, canvasBreedte / 2, scoreboardY, 395, 199);
 
-    if(scoreboardY < 500) {
+    if(scoreboardY < 500 && frame - gameoverFrame < 200) {
       var dy = playButtonY - 630;
-      playButtonY -= dy * 0.03;
+      playButtonY -= dy * 0.05;
     }
     image(playButton, canvasBreedte / 2, playButtonY, 156, 87);
-
     push();
     tint(255, gameoverOpacity);
     image(gameover, canvasBreedte / 2, 200, 288, 63);
     pop();
     pop();
   } else {
-    // var d = flashOpacity;
-    // flashOpacity -= d * 0.02;
     if(flashOpacity > 0) {
       flashOpacity-= 5;
     }
@@ -398,6 +395,7 @@ function draw() {
       tekenScore();
       if (checkGameOver()) {
         gameoverFrame = frame;
+        playButtonY = canvasHoogte + 87
         spelStatus = GAMEOVER;
       }
       break;
@@ -432,8 +430,6 @@ var input = function() {
     spelerSnelheidY = -20;
   } else if(spelStatus === SPELEN) {
     spelerSnelheidY = -20;
-  } else if(spelStatus === GAMEOVER) {
-    resetSpel();
   }
 }
 
@@ -448,10 +444,35 @@ function keyPressed() {
   //   richting = 1;
   // }
 }
+var clickedOnPlay = false;
 function mousePressed() {
   input();
-  if(spelStatus === MENU) {
-    spelerX = 120;
-    spelStatus = WAITING;
+  if(spelStatus === MENU || spelStatus === GAMEOVER) {
+    var clickedX = mouseX > canvasBreedte / 2 - 78 && mouseX < canvasBreedte / 2 + 78;
+    var clickedY = mouseY > playButtonY - 44 && mouseY < playButtonY + 44;
+    if(clickedX && clickedY) {
+      if(spelStatus === MENU || (spelStatus === GAMEOVER && frame - gameoverFrame >= 195)) {
+        clickedOnPlay = true;
+        playButtonY += 10;
+      }
+    } else {
+      clickedOnPlay = false;
+    }
+  }
+}
+function mouseReleased() {
+  if(spelStatus === MENU || spelStatus === GAMEOVER) {
+    var releasedX = mouseX > canvasBreedte / 2 - 78 && mouseX < canvasBreedte / 2 + 78;
+    var releasedY = mouseY > playButtonY - 44 && mouseY < playButtonY + 44;
+    if(clickedOnPlay && releasedX && releasedY) {
+      if(spelStatus === MENU) {
+        spelerX = 120;
+        spelStatus = WAITING;
+      } else if(spelStatus === GAMEOVER) {
+        resetSpel();
+      }
+    } else if(clickedOnPlay) {
+      playButtonY -= 10;
+    }
   }
 }
