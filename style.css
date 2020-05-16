@@ -3,8 +3,8 @@
   /* zorg dat canvas niet groter wordt dan window
      en behoud breedte x hoogte verhouding van 1280x720
    */
-  max-width: min(100vh*720/1280, 100vw);
-  max-height: min(100vw*1280/720, 100vh);
+  max-width: min(100vh*600/950, 100vw);
+  max-height: min(100vw*950/600, 100vh);
 
   /* zet canvas in het midden
    */

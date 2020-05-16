@@ -21,31 +21,38 @@ const STARTMENU = 0;
 const SPELEN = 1;
 const GAMEOVER = 2;
 
-const canvasHoogte = 900;
-const canvasBreedte = 720;
+const canvasHoogte = 950;
+const canvasBreedte = 600;
 const buisInterval = 2; // interval voordat er weer een nieuwe buis spawnt
-const grondHoogte = 270;
+const grondHoogte = 200;
 
 // speler variables
-const spelerX = 100; // dit is een constant omdat de X van de speler nooit verandert
-var spelerYStart = 350;
+var spelerX = 120;
+var spelerYStart = 360;
 var spelerY = spelerYStart;
 var spelerSnelheidY = 0;
 var toetsAlIngedrukt = false;
 
 // buizen
-var buizen = [];
-["xPos", "yOffset", "scoreAdded"]
-var hoogteTussenBuizen = 150;
+var buizen = []; // nested array, formaat = ["xPos", "yOffset", "scoreAdded"];
+const hoogteTussenBuizen = 150;
+const buisBreedte = 100;
 
 // overig
-var snelheid = 2;
+var snelheid = 4;
 var spelStatus = STARTMENU;
 var score = 0; // aantal behaalde punten
 var highScore = 0;
 var newHighScore = false;
 var frame = 0;
 
+// richting uitleg:
+// -2 = reverse (naar links vliegen)
+// -1 = naar links vliegen overgaan
+// 1 = naar rechts vliegen overgaan
+// 2 = normaal (naar rechts vliegen)
+var richting = 2;
+// const reverseSnelheid = 4;
 
 
 /* ********************************************* */
@@ -62,6 +69,16 @@ function rotate_and_draw_image(img, img_x, img_y, img_width, img_height, img_ang
   pop()
 }
 
+function resetSpel() {
+  spelStatus = STARTMENU;
+  spelerY = spelerYStart;
+  spelerSnelheidY = 0;
+  buizen = [];
+  score = 0;
+  spelerX = 120;
+  richting = 2;
+}
+
 
 /**
  * Tekent het speelveld
@@ -71,7 +88,7 @@ var tekenVeld = function() {
   var groundHeight = groundSprite.height / groundSprite.width * canvasBreedte;
   var backgroundHeight = canvasHoogte - groundHeight;
   var backgroundWidth = background.width / backgroundHeight * canvasBreedte;
-  image(background, 0, 0, backgroundWidth, backgroundHeight);
+  image(background, 0, 0, canvasBreedte, backgroundHeight);
 };
 
 var statePx = 0;
@@ -80,11 +97,19 @@ var tekenGrond = function() {
   if(spelStatus === SPELEN || spelStatus === STARTMENU) {
     statePx += snelheid;
   }
+
   if(statePx > canvasBreedte) {
     statePx = 0;
   }
-  image(groundSprite, -statePx, canvasHoogte - groundHeight, canvasBreedte, groundHeight);
-  image(groundSprite, -statePx + canvasBreedte, canvasHoogte - groundHeight, canvasBreedte, groundHeight);
+
+
+  if(richting === -1 || richting === -2) {
+    image(groundSprite, statePx, canvasHoogte - groundHeight, canvasBreedte, groundHeight);
+    image(groundSprite, statePx - canvasBreedte, canvasHoogte - groundHeight, canvasBreedte, groundHeight);
+  } else {
+    image(groundSprite, -statePx, canvasHoogte - groundHeight, canvasBreedte, groundHeight);
+    image(groundSprite, -statePx + canvasBreedte, canvasHoogte - groundHeight, canvasBreedte, groundHeight);
+  }
 }
 
 var tekenScore = function() {
@@ -100,7 +125,7 @@ var tekenSpeler = function() {
   } else if(currentFlap === 2) {
     sprite = birdDownflap;
   }
-  rotate_and_draw_image(sprite, spelerX, spelerY, 83, 50, spelerSnelheidY);
+  rotate_and_draw_image(sprite, spelerX - 35, spelerY - 35, sprite.width * 2, sprite.height * 2, spelerSnelheidY);
   if(spelStatus === STARTMENU) {
     spelerY = sin(frame * 4) * 10 + spelerYStart;
   }
@@ -111,7 +136,7 @@ var spelerValt = function() {
     spelerSnelheidY += 0.5;
     spelerY += spelerSnelheidY;
   }
-  rotate_and_draw_image(birdMidflap, spelerX, spelerY, 70, 60, 80);
+  rotate_and_draw_image(birdMidflap, spelerX - 40, spelerY - 40, birdMidflap.width * 2, birdMidflap.height * 2, 70);
 }
 
 var updateSpeler = function() {
@@ -120,16 +145,25 @@ var updateSpeler = function() {
 }
 
 var tekenBuis = function(x, yOffset) {
+  var imgHoogte = pipeSprite.height / pipeSprite.width * buisBreedte
   // pijp boven
-  var y = canvasHoogte / 2 - yOffset - hoogteTussenBuizen - 640;
-  image(pipeOnderstebovenSprite, x, y, 104, 640);
+  var y = canvasHoogte / 2 - yOffset - hoogteTussenBuizen;
+  rotate_and_draw_image(pipeSprite, x, y - 355, buisBreedte, imgHoogte, 180, 0);
   // pijp onder
   var y2 = canvasHoogte / 2 - yOffset + hoogteTussenBuizen;
-  image(pipeSprite, x, y2, 104, 640);
+  rotate_and_draw_image(pipeSprite, x, y2 + 255, buisBreedte, imgHoogte);
 }
 
-var updateBuis = function(i) {
-  buizen[i][0] -= snelheid;
+var updateBuis = function(buis) {
+  if(richting === -2) {
+    buis[0] += snelheid;
+  } else if(richting === -1) {
+    buis[0] += snelheid;
+  } else if(richting === 1) {
+    buis[0] -= snelheid;
+  } else if(richting === 2) {
+    buis[0] -= snelheid;
+  }
 }
 
 
@@ -143,10 +177,9 @@ var checkGameOver = function() {
     gameOver = true;
   }
   buizen.forEach(function(buis) {
-    var raaktBuisX = buis[0] > spelerX - 100 && buis[0] < spelerX + 55;
-    var raaktBuisBoven = spelerY < canvasHoogte / 2 - buis[1] - hoogteTussenBuizen - 10; // lager = sneller botsing boven buis
-    var raaktBuisOnder = spelerY > canvasHoogte / 2 - buis[1] + hoogteTussenBuizen - 55; // hoger = sneller botsing onder buis
-
+    var raaktBuisX = spelerX + 20 > buis[0] && spelerX - 20 < buis[0] + buisBreedte;
+    var raaktBuisBoven = spelerY < canvasHoogte / 2 - buis[1] - hoogteTussenBuizen + 20; // lager = minder snel botsing
+    var raaktBuisOnder = spelerY > canvasHoogte / 2 - buis[1] + hoogteTussenBuizen - 15; // lager = minder snel botsing
     if(raaktBuisX && (raaktBuisBoven || raaktBuisOnder)) {
       gameOver = true;
     }
@@ -218,7 +251,6 @@ function setup() {
 
 function draw() {
   frame++;
-
   switch (spelStatus) {
     case STARTMENU:
       tekenVeld();
@@ -233,17 +265,62 @@ function draw() {
       var teVerwijderen;
       buizen.forEach(function(buis, i) {
         tekenBuis(buis[0], buis[1]);
-        updateBuis(i);
+        updateBuis(buis);
         if(buis[0] < -100) {
           teVerwijderen = i;
         }
-        if(buis[2] == false && buis[0] < 200) {
+        if(buis[2] == false && richting === 2 && buis[0] < 100) {
+          score++;
+          buis[2] = true;
+        } else if(buis[2] == false && richting === -2 && buis[0] > 430) {
           score++;
           buis[2] = true;
         }
       })
       if(teVerwijderen) {
         buizen.splice(teVerwijderen, 1);
+      }
+
+      if(richting === -1) {
+        if(spelerX >= 450) {
+          var teVerwijderen = [];
+          buizen.forEach(function(buis, i) {
+            if(buis[0] > spelerX) {
+              teVerwijderen.push(buis);
+            } else {
+              buis[2] = false;
+            }
+          })
+          teVerwijderen.forEach(function(buis) {
+            var index = array.indexOf(buis);
+            if (index > -1) {
+              array.splice(index, 1);
+            }
+          })
+          richting = -2;
+        } else {
+          spelerX += snelheid;
+        }
+      } else if(richting === 1) {
+        if(spelerX <= 120) {
+          var teVerwijderen = [];
+          buizen.forEach(function(buis, i) {
+            if(buis[0] < spelerX) {
+              teVerwijderen.push(buis);
+            } else {
+              buis[2] = false;
+            }
+          })
+          teVerwijderen.forEach(function(buis) {
+            var index = array.indexOf(buis);
+            if (index > -1) {
+              array.splice(index, 1);
+            }
+          })
+          richting = 2;
+        } else {
+          spelerX -= snelheid;
+        }
       }
 
       tekenGrond();
@@ -276,17 +353,14 @@ function draw() {
 
 setInterval(function() {
   if(spelStatus === SPELEN) {
-    buizen.push([canvasBreedte, random(-50, 300), false]);
+    if(richting === 2) {
+      buizen.push([canvasBreedte, random(-50, 300), false]);
+    } else if(richting === -2) {
+      buizen.push([-buisBreedte, random(-50, 300), false]);
+    }
   }
 }, buisInterval * 2000 / snelheid);
 
-var resetSpel = function() {
-  spelStatus = STARTMENU;
-  spelerY = spelerYStart;
-  spelerSnelheidY = 0;
-  buizen = [];
-  score = 0;
-}
 
 var input = function() {
   if(spelStatus === SPELEN) {
@@ -302,6 +376,12 @@ var input = function() {
 function keyPressed() {
   if(keyCode === UP_ARROW || keyCode === 32) {
     input();
+  }
+  if(keyCode === RIGHT_ARROW) {
+    richting = -1;
+  }
+  if(keyCode === LEFT_ARROW) {
+    richting = 1;
   }
 }
 function mousePressed() {
