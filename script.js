@@ -17,9 +17,10 @@
 /* globale variabelen die je gebruikt in je game */
 /* ********************************************* */
 
-const STARTMENU = 0;
-const SPELEN = 1;
-const GAMEOVER = 2;
+const MENU = 0;
+const WAITING = 1;
+const SPELEN = 2;
+const GAMEOVER = 3;
 
 const canvasHoogte = 950;
 const canvasBreedte = 600;
@@ -27,7 +28,7 @@ const buisInterval = 2; // interval voordat er weer een nieuwe buis spawnt
 const grondHoogte = 200;
 
 // speler variables
-var spelerX = 120;
+var spelerX = canvasBreedte / 2;
 var spelerYStart = 360;
 var spelerY = spelerYStart;
 var spelerSnelheidY = 0;
@@ -38,21 +39,27 @@ var buizen = []; // nested array, formaat = ["xPos", "yOffset", "scoreAdded"];
 const hoogteTussenBuizen = 150;
 const buisBreedte = 100;
 
-// overig
-var snelheid = 4;
-var spelStatus = STARTMENU;
+
+// score
+var scoreboardY = canvasHoogte + 199;
+var gameoverOpacity = 0;
 var score = 0; // aantal behaalde punten
 var highScore = 0;
-var newHighScore = false;
+var flashOpacity = 255;
+
+// overig
+var snelheid = 4;
+var spelStatus = MENU;
 var frame = 0;
+var playButtonY = canvasHoogte + 87;
+var gameoverFrame;
 
 // richting uitleg:
 // -2 = reverse (naar links vliegen)
 // -1 = naar links vliegen overgaan
 // 1 = naar rechts vliegen overgaan
 // 2 = normaal (naar rechts vliegen)
-var richting = 2;
-// const reverseSnelheid = 4;
+var richting = 2; // richting is aan het begin naar rechts vliegen (dus 2)
 
 
 /* ********************************************* */
@@ -66,17 +73,21 @@ function rotate_and_draw_image(img, img_x, img_y, img_width, img_height, img_ang
   translate(img_x+img_width/2, img_y+img_width/2);
   rotate(img_angle);
   image(img, 0, 0, img_width, img_height);
-  pop()
+  pop();
 }
 
 function resetSpel() {
-  spelStatus = STARTMENU;
+  spelStatus = MENU;
   spelerY = spelerYStart;
   spelerSnelheidY = 0;
   buizen = [];
   score = 0;
   spelerX = 120;
   richting = 2;
+  scoreboardY = canvasHoogte + 199;
+  gameoverOpacity = 0;
+  playButtonY = canvasHoogte + 87;
+  flashOpacity = 255;
 }
 
 
@@ -91,18 +102,23 @@ var tekenVeld = function() {
   image(background, 0, 0, canvasBreedte, backgroundHeight);
 };
 
+var tekenMenu = function() {
+  push();
+  imageMode(CENTER);
+  image(playButton, canvasBreedte / 2, 500, 156, 87);
+  image(flappyBirdText, canvasBreedte / 2, 200, 356, 96);
+  pop();
+}
+
 var statePx = 0;
 var tekenGrond = function() {
   var groundHeight = groundSprite.height / groundSprite.width * canvasBreedte;
-  if(spelStatus === SPELEN || spelStatus === STARTMENU) {
+  if(spelStatus !== GAMEOVER) {
     statePx += snelheid;
   }
-
   if(statePx > canvasBreedte) {
     statePx = 0;
   }
-
-
   if(richting === -1 || richting === -2) {
     image(groundSprite, statePx, canvasHoogte - groundHeight, canvasBreedte, groundHeight);
     image(groundSprite, statePx - canvasBreedte, canvasHoogte - groundHeight, canvasBreedte, groundHeight);
@@ -113,9 +129,20 @@ var tekenGrond = function() {
 }
 
 var tekenScore = function() {
-  fill("green");
-  textSize(50);
-  text(score, canvasBreedte / 2, 100);
+  var digits = score.toString().length;
+  push();
+  imageMode(CENTER);
+  if(digits === 1) {
+    image(cijfers[score], canvasBreedte / 2, 90, 48, 72);
+  } else if(digits === 2) {
+    image(cijfers[score.toString()[0]], canvasBreedte / 2 - 25, 90, 48, 72);
+    image(cijfers[score.toString()[1]], canvasBreedte / 2 + 25, 90, 48, 72);
+  } else if(digits === 3) {
+    image(cijfers[score.toString()[0]], canvasBreedte / 2 - 55, 90, 48, 72);
+    image(cijfers[score.toString()[1]], canvasBreedte / 2, 90, 48, 72);
+    image(cijfers[score.toString()[2]], canvasBreedte / 2 + 55, 90, 48, 72);
+  }
+  pop()
 }
 
 var tekenSpeler = function() {
@@ -126,8 +153,10 @@ var tekenSpeler = function() {
     sprite = birdDownflap;
   }
   rotate_and_draw_image(sprite, spelerX - 35, spelerY - 35, sprite.width * 2, sprite.height * 2, spelerSnelheidY);
-  if(spelStatus === STARTMENU) {
+  if(spelStatus === MENU) {
     spelerY = sin(frame * 4) * 10 + spelerYStart;
+  } else if(spelStatus === WAITING) {
+    spelerY = sin(frame * 7) * 10 + spelerYStart;
   }
 }
 
@@ -187,13 +216,38 @@ var checkGameOver = function() {
   return gameOver;
 };
 
+
 var tekenGameoverMenu = function() {
-  if(newHighScore) {
-    fill("red");
-    textSize(40);
-    text("NEW HS: " + highScore, 40, 40);
+  if(frame - gameoverFrame > 120) {
+    push();
+    imageMode(CENTER);
+    var dy = scoreboardY - 440;
+    scoreboardY -= dy * 0.05;
+    if(gameoverOpacity < 255) {
+      gameoverOpacity+= 5;
+    }
+    image(scoreboard, canvasBreedte / 2, scoreboardY, 395, 199);
+
+    if(scoreboardY < 500) {
+      var dy = playButtonY - 630;
+      playButtonY -= dy * 0.03;
+    }
+    image(playButton, canvasBreedte / 2, playButtonY, 156, 87);
+
+    push();
+    tint(255, gameoverOpacity);
+    image(gameover, canvasBreedte / 2, 200, 288, 63);
+    pop();
+    pop();
+  } else {
+    // var d = flashOpacity;
+    // flashOpacity -= d * 0.02;
+    if(flashOpacity > 0) {
+      flashOpacity-= 5;
+    }
+    fill(255, 255, 255, flashOpacity);
+    rect(0, 0, canvasBreedte, canvasHoogte);
   }
-  text("GAME OVER", canvasBreedte / 2, 100);
 }
 
 
@@ -208,17 +262,29 @@ let birdUpflap;
 let birdMidflap;
 let birdDownflap;
 let pipeSprite;
-let pipeOnderstebovenSprite;
 let groundSprite;
 let background;
+let scoreboard;
+let gameover;
+let playButton;
+let flappyBirdText;
+let tapToJump;
+var cijfers = [];
 function preload() {
+  [0,1,2,3,4,5,6,7,8,9].forEach(function(num) {
+    cijfers.push(loadImage("images/numbers/" + num + ".png"));
+  })
   birdUpflap = loadImage('images/bird-upflap.png');
   birdMidflap = loadImage('images/bird-midflap.png');
   birdDownflap = loadImage('images/bird-downflap.png');
   pipeSprite = loadImage('images/pipe.png');
-  pipeOnderstebovenSprite = loadImage('images/pipe-ondersteboven.jpg');
   groundSprite = loadImage('images/ground.png');
   background = loadImage('images/background.png');
+  scoreboard = loadImage('images/scoreboard.png');
+  gameover = loadImage('images/GameOver.png');
+  playButton = loadImage('images/play.png');
+  flappyBirdText = loadImage('images/FlappyBird.png');
+  tapToJump = loadImage('images/tap.png');
 }
 
 var currentFlap = 0;
@@ -228,7 +294,7 @@ function setup() {
   // Plaatjes laden
 
   setInterval(function() {
-    if(spelStatus === SPELEN || spelStatus === STARTMENU) {
+    if(spelStatus === SPELEN || spelStatus === MENU) {
       if(currentFlap < 2) {
         currentFlap++;
       } else {
@@ -239,7 +305,12 @@ function setup() {
 
 
   // Maak een canvas (rechthoek) waarin je je speelveld kunt tekenen
-  createCanvas(canvasBreedte, canvasHoogte);
+  let canvasElement = createCanvas(canvasBreedte, canvasHoogte).elt;
+  let context = canvasElement.getContext('2d');
+  context.mozImageSmoothingEnabled = false;
+  context.webkitImageSmoothingEnabled = false;
+  context.msImageSmoothingEnabled = false;
+  context.imageSmoothingEnabled = false;
 }
 
 
@@ -252,16 +323,25 @@ function setup() {
 function draw() {
   frame++;
   switch (spelStatus) {
-    case STARTMENU:
+    case MENU:
       tekenVeld();
       tekenGrond();
       tekenSpeler();
+      tekenMenu();
+      break;
+    case WAITING:
+      tekenVeld();
+      tekenGrond();
+      tekenSpeler();
+      push();
+      imageMode(CENTER);
+      image(tapToJump, canvasBreedte / 2, 400, 228, 196);
+      pop();
       break;
     case SPELEN:
       tekenVeld();
       tekenSpeler();
       updateSpeler();
-
       var teVerwijderen = [];
       buizen.forEach(function(buis, i) {
         tekenBuis(buis[0], buis[1]);
@@ -279,7 +359,6 @@ function draw() {
           buis[2] = true;
         }
       })
-
       if(richting === -1) {
         if(spelerX >= 450) {
           var teVerwijderen = [];
@@ -309,26 +388,17 @@ function draw() {
           spelerX -= snelheid;
         }
       }
-
       teVerwijderen.forEach(function(buis) {
         var index = buizen.indexOf(buis);
         if (index > -1) {
           buizen.splice(index, 1);
         }
       })
-
       tekenGrond();
       tekenScore();
-
       if (checkGameOver()) {
-        if(score > highScore) {
-          highScore = score;
-          newHighScore = true;
-        } else {
-          newHighScore = false;
-        }
+        gameoverFrame = frame;
         spelStatus = GAMEOVER;
-        spelerSnelheidY = 1;
       }
       break;
     case GAMEOVER:
@@ -357,11 +427,11 @@ setInterval(function() {
 
 
 var input = function() {
-  if(spelStatus === SPELEN) {
-    spelerSnelheidY = -20;
-  } else if(spelStatus === STARTMENU) {
-    spelerSnelheidY = -20;
+  if(spelStatus === WAITING) {
     spelStatus = SPELEN;
+    spelerSnelheidY = -20;
+  } else if(spelStatus === SPELEN) {
+    spelerSnelheidY = -20;
   } else if(spelStatus === GAMEOVER) {
     resetSpel();
   }
@@ -371,13 +441,17 @@ function keyPressed() {
   if(keyCode === UP_ARROW || keyCode === 32) {
     input();
   }
-  if(keyCode === RIGHT_ARROW) {
-    richting = -1;
-  }
-  if(keyCode === LEFT_ARROW) {
-    richting = 1;
-  }
+  // if(keyCode === RIGHT_ARROW) {
+  //   richting = -1;
+  // }
+  // if(keyCode === LEFT_ARROW) {
+  //   richting = 1;
+  // }
 }
 function mousePressed() {
   input();
+  if(spelStatus === MENU) {
+    spelerX = 120;
+    spelStatus = WAITING;
+  }
 }
