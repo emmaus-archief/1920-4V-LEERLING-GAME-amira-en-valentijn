@@ -434,9 +434,7 @@ function draw() {
       })
       tekenGrond();
       spelerValt();
-      if(spelerY > grondHoogte) {
-        tekenGameoverMenu();
-      }
+      tekenGameoverMenu();
       break;
   }
 }
