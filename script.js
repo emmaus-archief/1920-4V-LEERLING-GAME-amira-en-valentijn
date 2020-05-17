@@ -46,13 +46,16 @@ var gameoverOpacity = 0;
 var score = 0; // aantal behaalde punten
 var highScore = 0;
 var flashOpacity = 255;
+var countdownScore = -1;
 
 // overig
 var snelheid = 4;
 var spelStatus = MENU;
 var frame = 0;
 var playButtonY = 500;
+var homeModusButtonY = 600;
 var gameoverFrame;
+var mode = 1; // 0 = normal mode, 1 = home mode
 
 // richting uitleg:
 // -2 = reverse (naar links vliegen)
@@ -82,6 +85,7 @@ function resetSpel() {
   spelerSnelheidY = 0;
   buizen = [];
   score = 0;
+  countdownScore = -1;
   spelerX = 120;
   richting = 2;
   scoreboardY = canvasHoogte + 199;
@@ -106,6 +110,7 @@ var tekenMenu = function() {
   push();
   imageMode(CENTER);
   image(playButton, canvasBreedte / 2, playButtonY, 156, 87);
+  image(homeModusButton, canvasBreedte / 2, homeModusButtonY, 156, 87);
   image(flappyBirdText, canvasBreedte / 2, 200, 356, 96);
   pop();
 }
@@ -129,20 +134,38 @@ var tekenGrond = function() {
 }
 
 var tekenScore = function() {
-  var digits = score.toString().length;
   push();
   imageMode(CENTER);
+  var digits = score.toString().length;
+  var y = 90;
   if(digits === 1) {
     image(cijfers[score], canvasBreedte / 2, 90, 48, 72);
   } else if(digits === 2) {
-    image(cijfers[score.toString()[0]], canvasBreedte / 2 - 25, 90, 48, 72);
-    image(cijfers[score.toString()[1]], canvasBreedte / 2 + 25, 90, 48, 72);
+    image(cijfers[score.toString()[0]], canvasBreedte / 2 - 25, y, 48, 72);
+    image(cijfers[score.toString()[1]], canvasBreedte / 2 + 25, y, 48, 72);
   } else if(digits === 3) {
-    image(cijfers[score.toString()[0]], canvasBreedte / 2 - 55, 90, 48, 72);
-    image(cijfers[score.toString()[1]], canvasBreedte / 2, 90, 48, 72);
-    image(cijfers[score.toString()[2]], canvasBreedte / 2 + 55, 90, 48, 72);
+    image(cijfers[score.toString()[0]], canvasBreedte / 2 - 55, y, 48, 72);
+    image(cijfers[score.toString()[1]], canvasBreedte / 2, y, 48, 72);
+    image(cijfers[score.toString()[2]], canvasBreedte / 2 + 55, y, 48, 72);
   }
-  pop()
+  if(mode === 1 && countdownScore >= 0) {
+    digits = countdownScore.toString().length;
+    y = 180;
+    push();
+    tint(0, 180, 0);
+    if(digits === 1) {
+      image(cijfers[countdownScore], canvasBreedte / 2, y, 48, 72);
+    } else if(digits === 2) {
+      image(cijfers[countdownScore.toString()[0]], canvasBreedte / 2 - 25, y, 48, 72);
+      image(cijfers[countdownScore.toString()[1]], canvasBreedte / 2 + 25, y, 48, 72);
+    } else if(digits === 3) {
+      image(cijfers[countdownScore.toString()[0]], canvasBreedte / 2 - 55, y, 48, 72);
+      image(cijfers[countdownScore.toString()[1]], canvasBreedte / 2, y, 48, 72);
+      image(cijfers[countdownScore.toString()[2]], canvasBreedte / 2 + 55, y, 48, 72);
+    }
+    pop();
+  }
+  pop();
 }
 
 var tekenSpeler = function() {
@@ -219,6 +242,7 @@ var checkGameOver = function() {
 
 var tekenGameoverMenu = function() {
   if(frame - gameoverFrame > 40) {
+    // 40 frames nadat de speler doodgaat komt het menu met een animatie in beeld
     push();
     imageMode(CENTER);
     var dy = scoreboardY - 440;
@@ -279,6 +303,7 @@ var tekenGameoverMenu = function() {
 
     pop();
   } else {
+    // flits bij het doodgaan
     if(flashOpacity > 0) {
       flashOpacity-= 5;
     }
@@ -304,12 +329,15 @@ let background;
 let scoreboard;
 let gameover;
 let playButton;
+let homeModusButton;
 let flappyBirdText;
+let getReadyText;
 let tapToJump;
 let bronzeMedal;
 let silverMedal;
 let goldMedal;
 let platinumMedal;
+let uitlegBord;
 var cijfers = [];
 function preload() {
   [0,1,2,3,4,5,6,7,8,9].forEach(function(num) {
@@ -324,12 +352,15 @@ function preload() {
   scoreboard = loadImage('images/scoreboard.png');
   gameover = loadImage('images/GameOver.png');
   playButton = loadImage('images/play.png');
+  homeModusButton = loadImage('images/homeModusButton.png');
   flappyBirdText = loadImage('images/FlappyBird.png');
+  getReadyText = loadImage('images/GetReady.png');
   tapToJump = loadImage('images/tap.png');
   bronzeMedal = loadImage("images/medals/bronze.png");
   silverMedal = loadImage("images/medals/silver.png");
   goldMedal = loadImage("images/medals/gold.png");
   platinumMedal = loadImage("images/medals/platinum.png");
+  uitlegBord = loadImage('images/uitlegBord.png')
 }
 
 var currentFlap = 0;
@@ -381,6 +412,11 @@ function draw() {
       push();
       imageMode(CENTER);
       image(tapToJump, canvasBreedte / 2, 400, 228, 196);
+      if(mode === 0) {
+        image(getReadyText, canvasBreedte / 2, 150, 276, 75);
+      } else if(mode === 1) {
+        image(uitlegBord, canvasBreedte / 2, 150);
+      }
       pop();
       break;
     case SPELEN:
@@ -400,7 +436,7 @@ function draw() {
           score++;
           buis[2] = true;
         } else if(buis[2] == false && richting === -2 && buis[0] > 430) {
-          score++;
+          countdownScore--;
           buis[2] = true;
         }
       })
@@ -418,20 +454,6 @@ function draw() {
         } else {
           spelerX += snelheid;
         }
-      } else if(richting === 1) {
-        if(spelerX <= 120) {
-          var teVerwijderen = [];
-          buizen.forEach(function(buis, i) {
-            if(buis[0] < spelerX) {
-              teVerwijderen.push(buis);
-            } else {
-              buis[2] = false;
-            }
-          })
-          richting = 2;
-        } else {
-          spelerX -= snelheid;
-        }
       }
       teVerwijderen.forEach(function(buis) {
         var index = buizen.indexOf(buis);
@@ -443,7 +465,7 @@ function draw() {
       tekenScore();
       if (checkGameOver()) {
         gameoverFrame = frame;
-        playButtonY = canvasHoogte + 87
+        playButtonY = canvasHoogte + 87;
         spelStatus = GAMEOVER;
         if(score > highScore) {
           highScore = score;
@@ -467,7 +489,15 @@ setInterval(function() {
     if(richting === 2) {
       buizen.push([canvasBreedte, random(-50, 300), false]);
     } else if(richting === -2) {
-      buizen.push([-buisBreedte, random(-50, 300), false]);
+      var buizenLinksVanSpeler = 0;
+      buizen.forEach(function(buis) {
+        if(buis[0] < spelerX) {
+          buizenLinksVanSpeler++;
+        }
+      })
+      if(buizenLinksVanSpeler < countdownScore) {
+        buizen.push([-buisBreedte, random(-50, 300), false]);
+      }
     }
   }
 }, buisInterval * 2000 / snelheid);
@@ -483,17 +513,16 @@ var input = function() {
 }
 
 function keyPressed() {
-  if(keyCode === UP_ARROW || keyCode === 32) {
+  if(keyCode === UP_ARROW) {
     input();
   }
-  // if(keyCode === RIGHT_ARROW) {
-  //   richting = -1;
-  // }
-  // if(keyCode === LEFT_ARROW) {
-  //   richting = 1;
-  // }
+  if(spelStatus === SPELEN && mode === 1 && keyCode === 32) {
+    countdownScore = score;
+    richting = -1;
+  }
 }
 var clickedOnPlay = false;
+var clickedOnHomeModus = false;
 function mousePressed() {
   input();
   if(spelStatus === MENU || spelStatus === GAMEOVER) {
@@ -507,6 +536,13 @@ function mousePressed() {
     } else {
       clickedOnPlay = false;
     }
+    clickedY = mouseY > homeModusButtonY - 44 && mouseY < homeModusButtonY + 44;
+    if(clickedX && clickedY) {
+      clickedOnHomeModus = true;
+      homeModusButtonY += 10;
+    } else {
+      clickedOnHomeModus = false;
+    }
   }
 }
 function mouseReleased() {
@@ -517,11 +553,20 @@ function mouseReleased() {
       if(spelStatus === MENU) {
         spelerX = 120;
         spelStatus = WAITING;
+        mode = 0;
       } else if(spelStatus === GAMEOVER) {
         resetSpel();
       }
     } else if(clickedOnPlay) {
       playButtonY -= 10;
+    }
+    releasedY = mouseY > homeModusButtonY - 44 && mouseY < homeModusButtonY + 44;
+    if(clickedOnHomeModus && releasedX && releasedY) {
+      spelerX = 120;
+      spelStatus = WAITING;
+      mode = 1;
+    } else if(clickedOnHomeModus) {
+      homeModusButtonY -= 10;
     }
   }
 }
