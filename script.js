@@ -237,6 +237,31 @@ var tekenGameoverMenu = function() {
     tint(255, gameoverOpacity);
     image(gameover, canvasBreedte / 2, 200, 288, 63);
     pop();
+
+    // teken score
+    score = score.toString();
+    var digits = score.length;
+    if(digits === 1) {
+      score =  "00" + score;
+    } else if(digits == 2) {
+      score =  "0" + score;
+    }
+    image(cijfers[score[0]], 410, scoreboardY - 25, 16, 24);
+    image(cijfers[score[1]], 430, scoreboardY - 25, 16, 24);
+    image(cijfers[score[2]], 450, scoreboardY - 25, 16, 24);
+
+    // teken high score
+    highScore = highScore.toString();
+    var digits = highScore.length;
+    if(digits === 1) {
+      highScore =  "00" + highScore;
+    } else if(digits == 2) {
+      highScore =  "0" + highScore;
+    }
+    image(cijfers[highScore[0]], 410, scoreboardY + 45, 16, 24);
+    image(cijfers[highScore[1]], 430, scoreboardY + 45, 16, 24);
+    image(cijfers[highScore[2]], 450, scoreboardY + 45, 16, 24);
+
     pop();
   } else {
     if(flashOpacity > 0) {
@@ -397,6 +422,9 @@ function draw() {
         gameoverFrame = frame;
         playButtonY = canvasHoogte + 87
         spelStatus = GAMEOVER;
+        if(score > highScore) {
+          highScore = score;
+        }
       }
       break;
     case GAMEOVER:
