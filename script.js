@@ -262,6 +262,21 @@ var tekenGameoverMenu = function() {
     image(cijfers[highScore[1]], 430, scoreboardY + 45, 16, 24);
     image(cijfers[highScore[2]], 450, scoreboardY + 45, 16, 24);
 
+    // teken medaille
+    var medal;
+    if(score >= 100) {
+      medal = platinumMedal;
+    } else if(score >= 50) {
+      medal = goldMedal;
+    } else if(score >= 25) {
+      medal = silverMedal;
+    } else if(score >= 10) {
+      medal = bronzeMedal;
+    }
+    if(medal) {
+      image(medal, 188, scoreboardY + 12, 80, 80);
+    }
+
     pop();
   } else {
     if(flashOpacity > 0) {
@@ -291,11 +306,15 @@ let gameover;
 let playButton;
 let flappyBirdText;
 let tapToJump;
+let bronzeMedal;
+let silverMedal;
+let goldMedal;
+let platinumMedal;
 var cijfers = [];
 function preload() {
   [0,1,2,3,4,5,6,7,8,9].forEach(function(num) {
     cijfers.push(loadImage("images/numbers/" + num + ".png"));
-  })
+  });
   birdUpflap = loadImage('images/bird-upflap.png');
   birdMidflap = loadImage('images/bird-midflap.png');
   birdDownflap = loadImage('images/bird-downflap.png');
@@ -307,6 +326,10 @@ function preload() {
   playButton = loadImage('images/play.png');
   flappyBirdText = loadImage('images/FlappyBird.png');
   tapToJump = loadImage('images/tap.png');
+  bronzeMedal = loadImage("images/medals/bronze.png");
+  silverMedal = loadImage("images/medals/silver.png");
+  goldMedal = loadImage("images/medals/gold.png");
+  platinumMedal = loadImage("images/medals/platinum.png");
 }
 
 var currentFlap = 0;
