@@ -53,9 +53,10 @@ var snelheid = 4;
 var spelStatus = MENU;
 var frame = 0;
 var playButtonY = 500;
+var menuButtonY = canvasHoogte + 42;
 var homeModusButtonY = 600;
 var gameoverFrame;
-var mode = 1; // 0 = normal mode, 1 = home mode
+var mode = 0; // 0 = normal mode, 1 = home mode
 
 // richting uitleg:
 // -2 = reverse (naar links vliegen)
@@ -91,6 +92,7 @@ function resetSpel() {
   scoreboardY = canvasHoogte + 199;
   gameoverOpacity = 0;
   playButtonY = canvasHoogte + 87;
+  menuButtonY = canvasHoogte + 42;
   flashOpacity = 255;
 }
 
@@ -245,6 +247,7 @@ var tekenGameoverMenu = function() {
     // 40 frames nadat de speler doodgaat komt het menu met een animatie in beeld
     push();
     imageMode(CENTER);
+    // teken scorebord achtergrond
     var dy = scoreboardY - 440;
     scoreboardY -= dy * 0.05;
     if(gameoverOpacity < 255) {
@@ -252,15 +255,25 @@ var tekenGameoverMenu = function() {
     }
     image(scoreboard, canvasBreedte / 2, scoreboardY, 395, 199);
 
-    if(scoreboardY < 500 && frame - gameoverFrame < 200) {
+    // teken speelknop
+    if(scoreboardY < 500 && frame - gameoverFrame < 200) { // na 200 frames stopt de animatie
       var dy = playButtonY - 630;
-      playButtonY -= dy * 0.05;
+      playButtonY -= dy * 0.07;
     }
     image(playButton, canvasBreedte / 2, playButtonY, 156, 87);
+
+    // teken game over tekst
     push();
     tint(255, gameoverOpacity);
     image(gameover, canvasBreedte / 2, 200, 288, 63);
     pop();
+
+    // teken menuknop
+    if(frame - gameoverFrame > 100 && frame - gameoverFrame < 200) { // na 100 frames komt de animatie in beeld, na 200 frames stopt de animatie
+      var dy = menuButtonY - 715;
+      menuButtonY -= dy * 0.07;
+    }
+    image(menuButton, canvasBreedte / 2, menuButtonY, 120, 42);
 
     // teken score
     score = score.toString();
@@ -330,6 +343,7 @@ let scoreboard;
 let gameover;
 let playButton;
 let homeModusButton;
+let menuButton;
 let flappyBirdText;
 let getReadyText;
 let tapToJump;
@@ -353,6 +367,7 @@ function preload() {
   gameover = loadImage('images/GameOver.png');
   playButton = loadImage('images/play.png');
   homeModusButton = loadImage('images/homeModusButton.png');
+  menuButton = loadImage('images/menuButton.png');
   flappyBirdText = loadImage('images/FlappyBird.png');
   getReadyText = loadImage('images/GetReady.png');
   tapToJump = loadImage('images/tap.png');
@@ -382,6 +397,8 @@ function setup() {
 
   // Maak een canvas (rechthoek) waarin je je speelveld kunt tekenen
   let canvasElement = createCanvas(canvasBreedte, canvasHoogte).elt;
+  // Dit volgende stukje code zorgt ervoor dat de browser voor het groter maken van de plaatjes het 'nearest neighbour' algoritme gebruikt
+  // zodat de plaatjes er niet vaag uitzien (bron: )
   let context = canvasElement.getContext('2d');
   context.mozImageSmoothingEnabled = false;
   context.webkitImageSmoothingEnabled = false;
@@ -466,6 +483,7 @@ function draw() {
       if (checkGameOver()) {
         gameoverFrame = frame;
         playButtonY = canvasHoogte + 87;
+        menuButtonY = canvasHoogte + 42;
         spelStatus = GAMEOVER;
         if(score > highScore) {
           highScore = score;
@@ -523,9 +541,11 @@ function keyPressed() {
 }
 var clickedOnPlay = false;
 var clickedOnHomeModus = false;
+var clickedOnMenu = false;
 function mousePressed() {
   input();
   if(spelStatus === MENU || spelStatus === GAMEOVER) {
+    // Check of er op de speel knop wordt geklikt (kan zowel in het menu als game over scherm)
     var clickedX = mouseX > canvasBreedte / 2 - 78 && mouseX < canvasBreedte / 2 + 78;
     var clickedY = mouseY > playButtonY - 44 && mouseY < playButtonY + 44;
     if(clickedX && clickedY) {
@@ -533,40 +553,51 @@ function mousePressed() {
         clickedOnPlay = true;
         playButtonY += 10;
       }
-    } else {
-      clickedOnPlay = false;
     }
-    clickedY = mouseY > homeModusButtonY - 44 && mouseY < homeModusButtonY + 44;
+  } else {
+    clickedOnPlay = false;
+  }
+  if(spelStatus === MENU) {
+    // Check of er op de home modus knop wordt geklikt (kan alleen in het menu)
+    var clickedX = mouseX > canvasBreedte / 2 - 78 && mouseX < canvasBreedte / 2 + 78;
+    var clickedY = mouseY > homeModusButtonY - 44 && mouseY < homeModusButtonY + 44;
     if(clickedX && clickedY) {
       clickedOnHomeModus = true;
       homeModusButtonY += 10;
-    } else {
-      clickedOnHomeModus = false;
     }
+  } else {
+    clickedOnHomeModus = false;
+  }
+  if(spelStatus === GAMEOVER) {
+    // Check of er op de menuknop wordt geklikt (kan alleen in het game over scherm)
+    var clickedX = mouseX > canvasBreedte / 2 - 60 && mouseX < canvasBreedte / 2 + 60;
+    var clickedY = mouseY > menuButtonY - 21 && mouseY < menuButtonY + 21;
+    if(clickedX && clickedY) {
+      clickedOnMenu = true;
+      menuButtonY += 10;
+    }
+  } else {
+    clickedOnMenu = false;
   }
 }
 function mouseReleased() {
-  if(spelStatus === MENU || spelStatus === GAMEOVER) {
-    var releasedX = mouseX > canvasBreedte / 2 - 78 && mouseX < canvasBreedte / 2 + 78;
-    var releasedY = mouseY > playButtonY - 44 && mouseY < playButtonY + 44;
-    if(clickedOnPlay && releasedX && releasedY) {
-      if(spelStatus === MENU) {
-        spelerX = 120;
-        spelStatus = WAITING;
-        mode = 0;
-      } else if(spelStatus === GAMEOVER) {
-        resetSpel();
-      }
-    } else if(clickedOnPlay) {
-      playButtonY -= 10;
-    }
-    releasedY = mouseY > homeModusButtonY - 44 && mouseY < homeModusButtonY + 44;
-    if(clickedOnHomeModus && releasedX && releasedY) {
+  if(clickedOnPlay) {
+    if(spelStatus === MENU) {
       spelerX = 120;
       spelStatus = WAITING;
-      mode = 1;
-    } else if(clickedOnHomeModus) {
-      homeModusButtonY -= 10;
+      mode = 0;
+    } else if(spelStatus === GAMEOVER) {
+      resetSpel();
     }
+  } else if(clickedOnHomeModus) {
+    spelerX = 120;
+    spelStatus = WAITING;
+    mode = 1;
+  } else if(clickedOnMenu) {
+    resetSpel();
+    spelerX = canvasBreedte / 2;
+    spelStatus = MENU;
+    playButtonY = 500;
+    // spelerSnelheidY = 0;
   }
 }
