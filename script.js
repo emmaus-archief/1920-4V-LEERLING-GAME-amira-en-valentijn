@@ -42,7 +42,7 @@ const buisBreedte = 100;
 
 // score
 var scoreboardY = canvasHoogte + 199;
-var gameoverOpacity = 0;
+var headerOpacity = 0;
 var score = 0; // aantal behaalde punten
 var highScore = 0;
 var flashOpacity = 255;
@@ -57,6 +57,7 @@ var menuButtonY = canvasHoogte + 42;
 var homeModusButtonY = 600;
 var gameoverFrame;
 var mode = 0; // 0 = normal mode, 1 = home mode
+var aantalFramesNaGewonnen = 0;
 
 // richting uitleg:
 // -2 = reverse (naar links vliegen)
@@ -90,10 +91,12 @@ function resetSpel() {
   spelerX = 120;
   richting = 2;
   scoreboardY = canvasHoogte + 199;
-  gameoverOpacity = 0;
+  headerOpacity = 0;
   playButtonY = canvasHoogte + 87;
   menuButtonY = canvasHoogte + 42;
   flashOpacity = 255;
+  aantalFramesNaGewonnen = 0;
+  countdownScore = -1;
 }
 
 
@@ -152,18 +155,18 @@ var tekenScore = function() {
   }
   if(mode === 1 && countdownScore >= 0) {
     digits = countdownScore.toString().length;
-    y = 180;
+    y = 160;
     push();
     tint(0, 180, 0);
     if(digits === 1) {
-      image(cijfers[countdownScore], canvasBreedte / 2, y, 48, 72);
+      image(cijfers[countdownScore], canvasBreedte / 2, y, 24, 36);
     } else if(digits === 2) {
-      image(cijfers[countdownScore.toString()[0]], canvasBreedte / 2 - 25, y, 48, 72);
-      image(cijfers[countdownScore.toString()[1]], canvasBreedte / 2 + 25, y, 48, 72);
+      image(cijfers[countdownScore.toString()[0]], canvasBreedte / 2 - 25, y, 24, 36);
+      image(cijfers[countdownScore.toString()[1]], canvasBreedte / 2 + 25, y, 24, 36);
     } else if(digits === 3) {
-      image(cijfers[countdownScore.toString()[0]], canvasBreedte / 2 - 55, y, 48, 72);
-      image(cijfers[countdownScore.toString()[1]], canvasBreedte / 2, y, 48, 72);
-      image(cijfers[countdownScore.toString()[2]], canvasBreedte / 2 + 55, y, 48, 72);
+      image(cijfers[countdownScore.toString()[0]], canvasBreedte / 2 - 55, y, 24, 36);
+      image(cijfers[countdownScore.toString()[1]], canvasBreedte / 2, y, 24, 36);
+      image(cijfers[countdownScore.toString()[2]], canvasBreedte / 2 + 55, y, 24, 36);
     }
     pop();
   }
@@ -250,9 +253,6 @@ var tekenGameoverMenu = function() {
     // teken scorebord achtergrond
     var dy = scoreboardY - 440;
     scoreboardY -= dy * 0.05;
-    if(gameoverOpacity < 255) {
-      gameoverOpacity+= 5;
-    }
     image(scoreboard, canvasBreedte / 2, scoreboardY, 395, 199);
 
     // teken speelknop
@@ -262,10 +262,23 @@ var tekenGameoverMenu = function() {
     }
     image(playButton, canvasBreedte / 2, playButtonY, 156, 87);
 
-    // teken game over tekst
+    // teken hoofdtekst (game over of gefeliciteerd)
+    if(headerOpacity < 255) {
+      headerOpacity += 5;
+    }
     push();
-    tint(255, gameoverOpacity);
-    image(gameover, canvasBreedte / 2, 200, 288, 63);
+    tint(255, headerOpacity);
+    if(mode === 0) {
+      // bij normale modus
+      image(gameover, canvasBreedte / 2, 200, 288, 63);
+    } else if(countdownScore > 0 || score == 0) {
+      // bij home modus, maar als de speler nog niet levend is teruggekeerd
+      image(gameover, canvasBreedte / 2, 200, 288, 63);
+      image(nietLevendTeruggekeerd, canvasBreedte / 2, 270, 296, 57);
+    } else {
+      // bij home modus als de speler het heeft gehaald
+      image(gefeliciteerd, canvasBreedte / 2, 200, 360, 142);
+    }
     pop();
 
     // teken menuknop
@@ -341,6 +354,8 @@ let groundSprite;
 let background;
 let scoreboard;
 let gameover;
+let gefeliciteerd;
+let nietLevendTeruggekeerd;
 let playButton;
 let homeModusButton;
 let menuButton;
@@ -365,6 +380,8 @@ function preload() {
   background = loadImage('images/background.png');
   scoreboard = loadImage('images/scoreboard.png');
   gameover = loadImage('images/GameOver.png');
+  gefeliciteerd = loadImage('images/Gefeliciteerd.png')
+  nietLevendTeruggekeerd = loadImage('images/NietLevendTeruggekeerd.png');
   playButton = loadImage('images/play.png');
   homeModusButton = loadImage('images/homeModusButton.png');
   menuButton = loadImage('images/menuButton.png');
@@ -480,7 +497,10 @@ function draw() {
       })
       tekenGrond();
       tekenScore();
-      if (checkGameOver()) {
+      if(countdownScore === 0) {
+        aantalFramesNaGewonnen++;
+      }
+      if (checkGameOver() || aantalFramesNaGewonnen > 50) {
         gameoverFrame = frame;
         playButtonY = canvasHoogte + 87;
         menuButtonY = canvasHoogte + 42;
@@ -534,7 +554,7 @@ function keyPressed() {
   if(keyCode === UP_ARROW) {
     input();
   }
-  if(spelStatus === SPELEN && mode === 1 && keyCode === 32) {
+  if(spelStatus === SPELEN && mode === 1 && keyCode === 32 && score > 0) {
     countdownScore = score;
     richting = -1;
   }
