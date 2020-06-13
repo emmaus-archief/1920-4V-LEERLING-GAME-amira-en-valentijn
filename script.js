@@ -271,7 +271,7 @@ var tekenGameoverMenu = function() {
     if(mode === 0) {
       // bij normale modus
       image(gameover, canvasBreedte / 2, 200, 288, 63);
-    } else if(countdownScore > 0 || score == 0) {
+    } else if(countdownScore > 0 || countdownScore === -1 || score === 0) {
       // bij home modus, maar als de speler nog niet levend is teruggekeerd
       image(gameover, canvasBreedte / 2, 200, 288, 63);
       image(nietLevendTeruggekeerd, canvasBreedte / 2, 270, 296, 57);
