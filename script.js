@@ -505,8 +505,11 @@ function draw() {
         playButtonY = canvasHoogte + 87;
         menuButtonY = canvasHoogte + 42;
         spelStatus = GAMEOVER;
-        if(score > highScore) {
+        if(score > highScore && (mode === 0 || countdownScore === 0)) {
           highScore = score;
+        }
+        if(mode === 1 && countdownScore !== 0) {
+          score = 0;
         }
       }
       break;
