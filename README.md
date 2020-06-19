@@ -1,6 +1,5 @@
 # Flappy Bird
 _door Amira en Valentijn_
-=======
 
 # Modussen
 Dit spel heeft 2 modussen:
