@@ -197,6 +197,13 @@ var tekenSpeler = function() {
   // de rotatie staat gelijk aan de snelheid van de speler, daardoor wordt de vogel
   // naar beneden gekanteld als de speler naar beneden valt en omhoog als de speler omhoog gaat
   rotate_and_draw_image(sprite, spelerX - 35, spelerY - 35, sprite.width * 2, sprite.height * 2, spelerSnelheidY);
+  if(spelStatus === MENU) {
+    // dit zorgt ervoor dat de speler smooth op en neer beweegt in het menu met een sinus functie
+    spelerY = sin(frame * 4) * 10 + spelerYStart;
+  } else if(spelStatus === WAITING) {
+    // bij de "waiting" status (als je moet klikken om te beginnen) beweegt de vogel sneller op en neer
+    spelerY = sin(frame * 7) * 10 + spelerYStart;
+  }
 }
 
 // Als de speler game over is, wordt deze functie elk frame uitgevoerd. Deze functie
@@ -213,13 +220,6 @@ var spelerValt = function() {
 var updateSpeler = function() {
   spelerSnelheidY += 1; // hierdoor valt de vogel naar beneden (positieve Y-snelheid = naar beneden vallen)
   spelerY += spelerSnelheidY; // hierdoor beweegt de speler, op basis van de snelheid variable
-  if(spelStatus === MENU) {
-    // dit zorgt ervoor dat de speler smooth op en neer beweegt in het menu met een sinus functie
-    spelerY = sin(frame * 4) * 10 + spelerYStart;
-  } else if(spelStatus === WAITING) {
-    // bij de "waiting" status (als je moet klikken om te beginnen) beweegt de vogel sneller op en neer
-    spelerY = sin(frame * 7) * 10 + spelerYStart;
-  }
 }
 
 // Tekent een buis (wordt dus voor elke buis uitgevoerd)
